@@ -106,6 +106,9 @@ class Slider extends Component {
    * @return {void}
    */
   handleStart = e => {
+    e.stopPropagation() // Might not be needed as the below seems to do the trick
+    e.preventDefault() // In IE event would sometimes bleed through, causing underlynig elements to be dragged, in turn making document.onmouseup never fire
+    this.mouseDownCoords = { x: e.screenX, y: e.screenY }
     const { onChangeStart } = this.props
     document.addEventListener('mousemove', this.handleDrag)
     document.addEventListener('mouseup', this.handleEnd)
@@ -126,6 +129,11 @@ class Slider extends Component {
    */
   handleDrag = e => {
     e.stopPropagation()
+    // On Windows, a mousemove event is triggered on mousedown even if there has been no movement
+    if (e.screenX === this.mouseDownCoords.x && e.screenY === this.mouseDownCoords.y) {
+      return
+    }
+    this.mouseDownCoords = {}
     const { onChange } = this.props
     const { target: { className, classList, dataset } } = e
     if (!onChange || className === 'rangeslider__labels') return
@@ -250,11 +258,10 @@ class Slider extends Component {
    * @return {Object} - Slider fill/handle coordinates
    */
   coordinates = pos => {
-    const { limit, grab } = this.state
+    const { limit } = this.state
     const { orientation } = this.props
     const value = this.getValueFromPosition(pos)
-    const position = this.getPositionFromValue(value)
-    const handlePos = orientation === 'horizontal' ? position + grab : position
+    const handlePos = this.getPositionFromValue(value)
     const fillPos = orientation === 'horizontal'
       ? handlePos
       : limit - handlePos
@@ -366,7 +373,7 @@ class Slider extends Component {
                 this.tooltip = st
               }}
               className='rangeslider__handle-tooltip'
-              >
+            >
               <span>{this.handleFormat(value)}</span>
             </div>
             : null}
