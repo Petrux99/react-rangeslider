@@ -108,7 +108,9 @@ class Slider extends Component {
   handleStart = e => {
     e.stopPropagation() // Might not be needed as the below seems to do the trick
     e.preventDefault() // In IE event would sometimes bleed through, causing underlynig elements to be dragged, in turn making document.onmouseup never fire
-    this.mouseDownCoords = { x: e.screenX, y: e.screenY }
+    if (e.screenX !== undefined) { // Otherwise not mousedown, probably touchstart
+      this.mouseDownCoords = { x: e.screenX, y: e.screenY }
+    }
     const { onChangeStart } = this.props
     document.addEventListener('mousemove', this.handleDrag)
     document.addEventListener('mouseup', this.handleEnd)
@@ -130,14 +132,13 @@ class Slider extends Component {
   handleDrag = e => {
     e.stopPropagation()
     // On Windows, a mousemove event is triggered on mousedown even if there has been no movement
-    if (e.screenX === this.mouseDownCoords.x && e.screenY === this.mouseDownCoords.y) {
+    if (this.mouseDownCoords && e.screenX === this.mouseDownCoords.x && e.screenY === this.mouseDownCoords.y) {
       return
     }
-    this.mouseDownCoords = {}
+    this.mouseDownCoords = undefined
     const { onChange } = this.props
     const { target: { className, classList, dataset } } = e
     if (!onChange || className === 'rangeslider__labels') return
-
     let value = this.position(e)
 
     if (
